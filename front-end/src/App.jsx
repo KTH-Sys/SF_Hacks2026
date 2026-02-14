@@ -107,6 +107,18 @@ function App() {
     }
   }, [activeChatId])
 
+  const appendChatMessage = useCallback((matchId, message) => {
+    if (!message?.id) return
+    setChatMessages((prev) => {
+      const existing = prev[matchId] || []
+      if (existing.some((m) => m.id === message.id)) return prev
+      return {
+        ...prev,
+        [matchId]: [...existing, message],
+      }
+    })
+  }, [])
+
   useEffect(() => {
     if (!isSignedIn) return
     loadMyListings()
@@ -131,11 +143,13 @@ function App() {
       try {
         const payload = JSON.parse(event.data)
         if (payload.event === 'new_message') {
-          setChatMessages((prev) => ({
-            ...prev,
-            [activeChatId]: [...(prev[activeChatId] || []), payload.data],
-          }))
-        } else if (payload.event === 'trade_confirmed' || payload.event === 'match_cancelled') {
+          appendChatMessage(activeChatId, payload.data)
+        } else if (
+          payload.event === 'trade_confirmed'
+          || payload.event === 'match_cancelled'
+          || payload.event === 'new_match'
+          || payload.event === 'trade_confirmation_pending'
+        ) {
           loadMatches()
         }
       } catch {
@@ -146,7 +160,17 @@ function App() {
 
     return () => ws.close()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeChatId, isSignedIn])
+  }, [activeChatId, appendChatMessage, isSignedIn, loadMatches])
+
+  // Keep UI in sync without manual refresh
+  useEffect(() => {
+    if (!isSignedIn) return undefined
+    const intervalId = window.setInterval(() => {
+      loadDeck()
+      loadMatches()
+    }, 5000)
+    return () => window.clearInterval(intervalId)
+  }, [isSignedIn, loadDeck, loadMatches])
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const categories = useMemo(
@@ -314,9 +338,7 @@ function App() {
       const myListingsRaw = await api.getMyListings()
       if (myListingsRaw.length === 0) return null
       const result = await api.swipe(myListingsRaw[0].id, targetListing.backendId || targetListing.id, direction)
-      if (result.match_created) {
-        await loadMatches()
-      }
+      await Promise.all([loadDeck(), loadMatches()])
       return result
     } catch (err) {
       console.error('Swipe failed:', err)
@@ -330,15 +352,8 @@ function App() {
     if (!activeChatId || !chatInput.trim()) return
 
     try {
-      if (wsRef && wsRef.readyState === WebSocket.OPEN) {
-        wsRef.send(JSON.stringify({ type: 'message', content: chatInput.trim() }))
-      } else {
-        const msg = await api.sendMessage(activeChatId, chatInput.trim())
-        setChatMessages((prev) => ({
-          ...prev,
-          [activeChatId]: [...(prev[activeChatId] || []), msg],
-        }))
-      }
+      const msg = await api.sendMessage(activeChatId, chatInput.trim())
+      appendChatMessage(activeChatId, msg)
       setChatInput('')
     } catch (err) {
       console.error('Failed to send message:', err)

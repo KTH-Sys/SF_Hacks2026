@@ -14,10 +14,22 @@ function SwipePage({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [statusMessage, setStatusMessage] = useState('Swipe left or right to discover your next swap.')
   const [showChoiceOverlay, setShowChoiceOverlay] = useState(false)
+  const [showMatchPopup, setShowMatchPopup] = useState(false)
   const [dragOffset, setDragOffset] = useState(0)
   const dragStartXRef = useRef(null)
   const wheelDeltaXRef = useRef(0)
   const lastWheelSwipeAtRef = useRef(0)
+  const matchPopupTimerRef = useRef(null)
+
+  const triggerMatchPopup = useCallback(() => {
+    setShowMatchPopup(true)
+    if (matchPopupTimerRef.current) {
+      window.clearTimeout(matchPopupTimerRef.current)
+    }
+    matchPopupTimerRef.current = window.setTimeout(() => {
+      setShowMatchPopup(false)
+    }, 1800)
+  }, [])
 
   const products = deckListings || []
   const currentProduct = products[currentIndex % Math.max(products.length, 1)]
@@ -43,14 +55,19 @@ function SwipePage({
     setShowChoiceOverlay(true)
     setStatusMessage('Nice choice. Opening product details...')
 
-    onSwipe(currentProduct, 'right')
+    onSwipe(currentProduct, 'right').then((result) => {
+      if (result?.match_created) {
+        triggerMatchPopup()
+        setStatusMessage('It\'s a match! Check your chats.')
+      }
+    })
 
     window.setTimeout(() => {
       setShowChoiceOverlay(false)
       onSelectProduct(currentProduct)
       setCurrentIndex((prev) => prev + 1)
     }, 820)
-  }, [currentProduct, freeLimitReached, onConsumeSwipe, onSelectProduct, onSwipe, showChoiceOverlay])
+  }, [currentProduct, freeLimitReached, onConsumeSwipe, onSelectProduct, onSwipe, showChoiceOverlay, triggerMatchPopup])
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -82,6 +99,14 @@ function SwipePage({
     return () => window.removeEventListener('wheel', onWheel)
   }, [swipeLeft, swipeRight])
 
+  useEffect(() => {
+    return () => {
+      if (matchPopupTimerRef.current) {
+        window.clearTimeout(matchPopupTimerRef.current)
+      }
+    }
+  }, [])
+
   const onPointerDownCard = (event) => {
     if (freeLimitReached || showChoiceOverlay) return
     dragStartXRef.current = event.clientX
@@ -102,6 +127,7 @@ function SwipePage({
 
   return (
     <div className="swipe-page-wrap">
+      {showMatchPopup && <div className="match-popup">It&apos;s a match!</div>}
       <header className="swipe-header">
         <button type="button" onClick={onBackToMarketplace}>
           Back to Marketplace
