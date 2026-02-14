@@ -42,7 +42,9 @@ function App() {
   const [activeChatId, setActiveChatId] = useState(null)
   const [chatMessages, setChatMessages] = useState({})
   const [chatInput, setChatInput] = useState('')
-  const [wsRef, setWsRef] = useState(null)
+  const wsConnectionRef = useRef(null)
+  const wsReconnectTimerRef = useRef(null)
+  const [wsConnected, setWsConnected] = useState(false)
   const [showMatchPopup, setShowMatchPopup] = useState(false)
   const matchPopupTimerRef = useRef(null)
   const seenMatchIdsRef = useRef(new Set())
@@ -79,6 +81,13 @@ function App() {
     return () => {
       if (matchPopupTimerRef.current) {
         window.clearTimeout(matchPopupTimerRef.current)
+      }
+      if (wsReconnectTimerRef.current) {
+        window.clearTimeout(wsReconnectTimerRef.current)
+      }
+      if (wsConnectionRef.current) {
+        wsConnectionRef.current.close()
+        wsConnectionRef.current = null
       }
     }
   }, [])
@@ -177,40 +186,103 @@ function App() {
   useEffect(() => {
     if (!activeChatId || !isSignedIn) return
 
-    api.getMessages(activeChatId).then((data) => {
-      setChatMessages((prev) => ({ ...prev, [activeChatId]: data.messages }))
-    }).catch(() => {})
+    let disposed = false
+    let reconnectAttempt = 0
 
-    // Set up WebSocket
-    if (wsRef) {
-      wsRef.close()
-    }
-    const ws = api.createChatWebSocket(activeChatId)
-    ws.onmessage = (event) => {
+    const fetchMessages = async () => {
       try {
-        const payload = JSON.parse(event.data)
-        if (payload.event === 'new_message') {
-          appendChatMessage(activeChatId, payload.data)
-        } else if (
-          payload.event === 'trade_confirmed'
-          || payload.event === 'match_cancelled'
-          || payload.event === 'new_match'
-          || payload.event === 'trade_confirmation_pending'
-        ) {
-          if (payload.event === 'new_match') {
-            triggerMatchPopup()
-          }
-          loadMatches()
-        }
+        const data = await api.getMessages(activeChatId)
+        if (disposed) return
+        setChatMessages((prev) => ({ ...prev, [activeChatId]: data.messages }))
       } catch {
         // ignore
       }
     }
-    setWsRef(ws)
 
-    return () => ws.close()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const connectWebSocket = () => {
+      if (disposed) return
+      const ws = api.createChatWebSocket(activeChatId)
+      wsConnectionRef.current = ws
+
+      ws.onopen = () => {
+        if (disposed) return
+        reconnectAttempt = 0
+        setWsConnected(true)
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data)
+          if (payload.event === 'new_message') {
+            const message = payload.data
+            const matchId = message?.match_id || activeChatId
+            appendChatMessage(matchId, message)
+          } else if (
+            payload.event === 'trade_confirmed'
+            || payload.event === 'match_cancelled'
+            || payload.event === 'new_match'
+            || payload.event === 'trade_confirmation_pending'
+          ) {
+            if (payload.event === 'new_match') {
+              triggerMatchPopup()
+            }
+            loadMatches()
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      ws.onerror = () => {
+        try {
+          ws.close()
+        } catch {
+          // ignore
+        }
+      }
+
+      ws.onclose = () => {
+        if (disposed) return
+        if (wsConnectionRef.current === ws) {
+          wsConnectionRef.current = null
+        }
+        setWsConnected(false)
+        const backoffMs = Math.min(3000, 500 * (2 ** reconnectAttempt))
+        reconnectAttempt += 1
+        wsReconnectTimerRef.current = window.setTimeout(connectWebSocket, backoffMs)
+      }
+    }
+
+    fetchMessages()
+    connectWebSocket()
+
+    return () => {
+      disposed = true
+      setWsConnected(false)
+      if (wsReconnectTimerRef.current) {
+        window.clearTimeout(wsReconnectTimerRef.current)
+        wsReconnectTimerRef.current = null
+      }
+      if (wsConnectionRef.current) {
+        wsConnectionRef.current.close()
+        wsConnectionRef.current = null
+      }
+    }
   }, [activeChatId, appendChatMessage, isSignedIn, loadMatches, triggerMatchPopup])
+
+  // Poll active chat as fallback while WS is disconnected
+  useEffect(() => {
+    if (!activeChatId || !isSignedIn || wsConnected) return undefined
+    const intervalId = window.setInterval(async () => {
+      try {
+        const data = await api.getMessages(activeChatId)
+        setChatMessages((prev) => ({ ...prev, [activeChatId]: data.messages }))
+      } catch {
+        // ignore
+      }
+    }, 2000)
+    return () => window.clearInterval(intervalId)
+  }, [activeChatId, isSignedIn, wsConnected])
 
   // Keep UI in sync without manual refresh
   useEffect(() => {
@@ -351,7 +423,15 @@ function App() {
     dismissMatchPopup()
     seenMatchIdsRef.current = new Set()
     hasLoadedMatchesRef.current = false
-    if (wsRef) wsRef.close()
+    setWsConnected(false)
+    if (wsReconnectTimerRef.current) {
+      window.clearTimeout(wsReconnectTimerRef.current)
+      wsReconnectTimerRef.current = null
+    }
+    if (wsConnectionRef.current) {
+      wsConnectionRef.current.close()
+      wsConnectionRef.current = null
+    }
   }
 
   // ── Listing actions ───────────────────────────────────────────────────────
@@ -408,8 +488,14 @@ function App() {
     if (!activeChatId || !chatInput.trim()) return
 
     try {
-      const msg = await api.sendMessage(activeChatId, chatInput.trim())
-      appendChatMessage(activeChatId, msg)
+      const content = chatInput.trim()
+      const ws = wsConnectionRef.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'message', content }))
+      } else {
+        const msg = await api.sendMessage(activeChatId, content)
+        appendChatMessage(activeChatId, msg)
+      }
       setChatInput('')
     } catch (err) {
       console.error('Failed to send message:', err)
