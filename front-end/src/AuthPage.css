@@ -1,0 +1,135 @@
+.auth-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.auth-card {
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.auth-hero {
+  padding: 2rem;
+  background: radial-gradient(circle at 12% 15%, #ffe4c8 0, transparent 44%),
+    radial-gradient(circle at 88% 78%, #d0f0e5 0, transparent 42%), var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin: 0;
+}
+
+.auth-hero h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+}
+
+.auth-hero p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.auth-form-wrap {
+  padding: 2rem;
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.auth-tabs button {
+  border: 0;
+  background: var(--soft-fill);
+  color: var(--ink);
+  padding: 0.65rem 0.7rem;
+  font-weight: 600;
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-tabs button.active {
+  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  color: var(--on-accent);
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.auth-form input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.65rem 0.7rem;
+  font: inherit;
+}
+
+.auth-message {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.86rem;
+}
+
+.auth-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.auth-form button {
+  border: none;
+  border-radius: 11px;
+  padding: 0.7rem 0.75rem;
+  color: var(--on-accent);
+  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 1080px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-hero {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .auth-form-wrap {
+    padding: 1.2rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .auth-hero,
+  .auth-form-wrap {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,192 @@
+.swipe-page-wrap {
+  min-height: 100vh;
+  padding: 1.2rem;
+  color: var(--ink);
+  background: radial-gradient(circle at 20% 16%, #4f9f4d 0, transparent 42%),
+    radial-gradient(circle at 80% 80%, #2f7f3f 0, transparent 38%), #3f8f43;
+}
+
+.swipe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.swipe-header button {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  padding: 0.5rem 0.8rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.swipe-header h1,
+.swipe-header p {
+  margin: 0;
+  color: #fff;
+}
+
+.swipe-header p {
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+.swipe-main {
+  display: grid;
+  grid-template-columns: auto minmax(280px, 520px) auto;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-deck {
+  position: relative;
+  height: 100%;
+  min-height: 560px;
+}
+
+.deck-layer {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 20px);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.layer-back {
+  top: 24px;
+  height: calc(100% - 8px);
+}
+
+.layer-mid {
+  top: 12px;
+  width: calc(100% - 10px);
+  height: calc(100% - 4px);
+}
+
+.swipe-card {
+  position: relative;
+  z-index: 3;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(17, 28, 19, 0.92);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+  transition: transform 140ms ease;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.swipe-card:active {
+  cursor: grabbing;
+}
+
+.swipe-image {
+  height: 390px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.choice-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(40, 160, 68, 0.82);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.choice-overlay.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.swipe-info {
+  padding: 0.95rem;
+}
+
+.swipe-info h2 {
+  margin: 0 0 0.4rem;
+  color: #fff;
+}
+
+.swipe-info p {
+  margin: 0.25rem 0;
+  color: #ecf5ea;
+}
+
+.swipe-action {
+  width: 68px;
+  height: 68px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 1.9rem;
+  cursor: pointer;
+}
+
+.swipe-action.no {
+  background: rgba(208, 87, 87, 0.22);
+}
+
+.swipe-action.yes {
+  background: rgba(63, 154, 89, 0.26);
+}
+
+.swipe-action:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.swipe-status {
+  margin: 1rem auto 0;
+  max-width: 620px;
+  text-align: center;
+  color: #f0f6ee;
+}
+
+.swipe-status.limit {
+  color: #ffe0d9;
+}
+
+@media (max-width: 860px) {
+  .swipe-main {
+    grid-template-columns: 1fr;
+  }
+
+  .swipe-action {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    padding: 0.35rem;
+  }
+
+  .swipe-deck {
+    min-height: 500px;
+  }
+
+  .swipe-image {
+    height: 320px;
+  }
+
+  .swipe-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

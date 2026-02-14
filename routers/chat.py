@@ -25,19 +25,20 @@ async def get_messages(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    Return paginated message history for a match.
+    """Return paginated message history for a match."""
+    await _assert_match_member(match_id, current_user["id"], db)
 
-    TODO:
-    1. Call await _assert_match_member(match_id, current_user["id"], db)
-    2. Query db[MESSAGES] where match_id==match_id, sort created_at asc,
-       .skip(offset).limit(limit) → to_list(length=limit)
-    3. count_documents for total
-    4. For each msg: serialize_doc then await _enrich_message(msg, db)
-    5. Return ChatHistory(match_id, messages=enriched, total=total)
-    """
-    # TODO: implement
-    raise NotImplementedError
+    cursor = db[MESSAGES].find({"match_id": match_id}).sort("created_at", 1).skip(offset).limit(limit)
+    raw_messages = await cursor.to_list(length=limit)
+
+    total = await db[MESSAGES].count_documents({"match_id": match_id})
+
+    enriched = []
+    for raw in raw_messages:
+        msg = serialize_doc(raw)
+        enriched.append(await _enrich_message(msg, db))
+
+    return ChatHistory(match_id=match_id, messages=enriched, total=total)
 
 
 # ─── REST: send message (fallback for non-WS clients) ─────────────────────────
@@ -49,20 +50,36 @@ async def send_message_rest(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    Send a message over REST (fallback — prefer WebSocket).
+    """Send a message over REST (fallback — prefer WebSocket)."""
+    match = await _assert_match_member(match_id, current_user["id"], db)
 
-    TODO:
-    1. match = await _assert_match_member(match_id, current_user["id"], db)
-    2. If match["status"] not in ("active","confirmed"): raise HTTP 400
-    3. new_message(match_id, sender_id, content, msg_type=payload.type) → insert
-    4. _enrich_message to get msg_out
-    5. Broadcast via ws_manager.broadcast_to_users([current_user, other_user],
-       event="new_message", data=msg_out.dict())
-    6. Return msg_out
-    """
-    # TODO: implement
-    raise NotImplementedError
+    if match["status"] not in ("active", "confirmed"):
+        raise HTTPException(status_code=400, detail="Cannot send messages in this match")
+
+    msg_doc = new_message(
+        match_id=match_id,
+        sender_id=current_user["id"],
+        content=payload.content,
+        msg_type=payload.type,
+    )
+    await db[MESSAGES].insert_one(msg_doc)
+
+    msg = serialize_doc(msg_doc)
+    msg_out = await _enrich_message(msg, db)
+
+    # Determine other user
+    other_user_id = (
+        match["user_b_id"] if current_user["id"] == match["user_a_id"] else match["user_a_id"]
+    )
+
+    # Broadcast to both users via WebSocket
+    await ws_manager.broadcast_to_users(
+        user_ids=[current_user["id"], other_user_id],
+        event="new_message",
+        data=msg_out.model_dump(mode="json"),
+    )
+
+    return msg_out
 
 
 # ─── WebSocket ─────────────────────────────────────────────────────────────────
@@ -73,54 +90,118 @@ async def websocket_chat(
     match_id: str,
     token: Optional[str] = Query(None),
 ):
-    """
-    Connect: ws://host/chat/ws/{match_id}?token=<jwt>
+    """Real-time WebSocket chat for a match."""
+    # 1. Authenticate via token
+    db = get_db()
+    user_id = decode_access_token(token) if token else None
+    if not user_id:
+        await websocket.close(code=4001, reason="Authentication required")
+        return
 
-    Client sends:  {"type": "message", "content": "Hello!"}
-                   {"type": "ping"}
-    Server pushes: {"event": "new_message", "data": {...MessageOut...}}
-                   {"event": "pong"}
+    # 2. Fetch user
+    user_raw = await db[USERS].find_one({"_id": user_id, "status": "active"})
+    if not user_raw:
+        await websocket.close(code=4001, reason="User not found")
+        return
+    user = serialize_doc(user_raw)
 
-    TODO:
-    1. decode_access_token(token) → user_id; close(4001) if None
-    2. Fetch user from db[USERS] (active); close(4001) if not found
-    3. Fetch match from db[MATCHES]; close(4004) if not found
-    4. Verify user is participant; close(4003) if not
-    5. await ws_manager.connect(websocket, user_id)
-    6. Loop: await websocket.receive_json()
-       - type=="message": re-fetch match status, insert message, enrich,
-         broadcast to both users
-       - type=="ping": send_json({"event": "pong"})
-    7. except WebSocketDisconnect: ws_manager.disconnect(websocket, user_id)
-    """
-    # TODO: implement
-    pass
+    # 3. Fetch match
+    match_raw = await db[MATCHES].find_one({"_id": match_id})
+    if not match_raw:
+        await websocket.close(code=4004, reason="Match not found")
+        return
+    match = serialize_doc(match_raw)
+
+    # 4. Verify user is participant
+    if user["id"] not in (match["user_a_id"], match["user_b_id"]):
+        await websocket.close(code=4003, reason="Not a participant")
+        return
+
+    other_user_id = (
+        match["user_b_id"] if user["id"] == match["user_a_id"] else match["user_a_id"]
+    )
+
+    # 5. Accept connection
+    await ws_manager.connect(websocket, user["id"])
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            msg_type = data.get("type", "")
+
+            if msg_type == "ping":
+                await websocket.send_json({"event": "pong"})
+
+            elif msg_type == "message":
+                content = data.get("content", "").strip()
+                if not content:
+                    continue
+
+                # Re-check match status
+                current_match_raw = await db[MATCHES].find_one({"_id": match_id})
+                if not current_match_raw:
+                    continue
+                current_match = serialize_doc(current_match_raw)
+                if current_match["status"] not in ("active", "confirmed"):
+                    await websocket.send_json({
+                        "event": "error",
+                        "data": {"message": "Match is no longer active"},
+                    })
+                    continue
+
+                # Insert message
+                msg_doc = new_message(
+                    match_id=match_id,
+                    sender_id=user["id"],
+                    content=content,
+                    msg_type="text",
+                )
+                await db[MESSAGES].insert_one(msg_doc)
+
+                msg = serialize_doc(msg_doc)
+                msg_out = await _enrich_message(msg, db)
+
+                # Broadcast to both users
+                await ws_manager.broadcast_to_users(
+                    user_ids=[user["id"], other_user_id],
+                    event="new_message",
+                    data=msg_out.model_dump(mode="json"),
+                )
+
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, user["id"])
+    except Exception:
+        ws_manager.disconnect(websocket, user["id"])
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async def _assert_match_member(match_id: str, user_id: str, db: AsyncIOMotorDatabase) -> dict:
-    """
-    Fetch match and verify user is a participant.
-
-    TODO:
-    1. raw = await db[MATCHES].find_one({"_id": match_id}) — 404 if None
-    2. match = serialize_doc(raw)
-    3. If user_id not in (match["user_a_id"], match["user_b_id"]): raise HTTP 403
-    4. Return match
-    """
-    # TODO: implement
-    raise NotImplementedError
+    """Fetch match and verify user is a participant."""
+    raw = await db[MATCHES].find_one({"_id": match_id})
+    if not raw:
+        raise HTTPException(status_code=404, detail="Match not found")
+    match = serialize_doc(raw)
+    if user_id not in (match["user_a_id"], match["user_b_id"]):
+        raise HTTPException(status_code=403, detail="You are not a participant in this match")
+    return match
 
 
 async def _enrich_message(msg: dict, db: AsyncIOMotorDatabase) -> MessageOut:
-    """
-    Add sender_name to a message dict and return MessageOut.
+    """Add sender_name to a message dict and return MessageOut."""
+    sender_name = "System"
+    if msg.get("sender_id") and msg["sender_id"] != "system":
+        sender_raw = await db[USERS].find_one({"_id": msg["sender_id"]})
+        if sender_raw:
+            sender = serialize_doc(sender_raw)
+            sender_name = sender.get("display_name", "Unknown")
 
-    TODO:
-    1. Fetch sender from db[USERS] by msg["sender_id"]
-    2. sender_name = serialize_doc(sender_raw)["display_name"] if found else "System"
-    3. Return MessageOut(id, match_id, sender_id, sender_name, content, type, created_at)
-    """
-    # TODO: implement
-    raise NotImplementedError
+    return MessageOut(
+        id=msg["id"],
+        match_id=msg["match_id"],
+        sender_id=msg["sender_id"],
+        sender_name=sender_name,
+        content=msg["content"],
+        type=msg["type"],
+        created_at=msg["created_at"],
+    )

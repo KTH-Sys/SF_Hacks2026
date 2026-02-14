@@ -1,0 +1,98 @@
+.owner-page-wrap {
+  min-height: 100vh;
+  padding: 1.2rem;
+}
+
+.owner-page-card {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+}
+
+.owner-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.owner-actions button {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 0.5rem 0.8rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.owner-layout {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+.owner-image {
+  min-height: 420px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background-size: cover;
+  background-position: center;
+}
+
+.owner-details {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  padding: 0.9rem;
+}
+
+.owner-tag {
+  margin: 0;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+}
+
+.owner-details h1 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.owner-details p {
+  color: var(--muted);
+}
+
+.owner-details h3 {
+  margin: 0.9rem 0 0.35rem;
+}
+
+.owner-details ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.owner-details button {
+  margin-top: 0.95rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  color: var(--on-accent);
+  padding: 0.56rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .owner-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-image {
+    min-height: 300px;
+  }
+}

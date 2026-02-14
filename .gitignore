@@ -13,6 +13,14 @@ build/
 
 # Environment variables
 .env
+.env.*
+
+# Frontend
+node_modules/
+front-end/node_modules/
+front-end/dist/
+front-end/.env
+front-end/.env.*
 
 # IDE
 .vscode/
