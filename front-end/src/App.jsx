@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import AuthPage from './AuthPage'
 import MarketplacePage from './MarketplacePage'
 import UserProfilePage from './UserProfilePage'
@@ -43,15 +43,37 @@ function App() {
   const [chatMessages, setChatMessages] = useState({})
   const [chatInput, setChatInput] = useState('')
   const [wsRef, setWsRef] = useState(null)
+  const [showMatchPopup, setShowMatchPopup] = useState(false)
+  const matchPopupTimerRef = useRef(null)
+  const seenMatchIdsRef = useRef(new Set())
+  const hasLoadedMatchesRef = useRef(false)
 
   // Search / filter
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const triggerMatchPopup = useCallback(() => {
+    setShowMatchPopup(true)
+    if (matchPopupTimerRef.current) {
+      window.clearTimeout(matchPopupTimerRef.current)
+    }
+    matchPopupTimerRef.current = window.setTimeout(() => {
+      setShowMatchPopup(false)
+    }, 1800)
+  }, [])
+
   useEffect(() => {
     document.documentElement.classList.toggle('theme-dark', darkModeOn)
     localStorage.setItem('darkMode', darkModeOn ? 'on' : 'off')
   }, [darkModeOn])
+
+  useEffect(() => {
+    return () => {
+      if (matchPopupTimerRef.current) {
+        window.clearTimeout(matchPopupTimerRef.current)
+      }
+    }
+  }, [])
 
   // ── Restore session on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -98,14 +120,22 @@ function App() {
   const loadMatches = useCallback(async () => {
     try {
       const data = await api.getMatches()
+      const hasLoadedBefore = hasLoadedMatchesRef.current
+      const hasNewMatch = data.some((m) => !seenMatchIdsRef.current.has(m.id))
+      seenMatchIdsRef.current = new Set(data.map((m) => m.id))
+      hasLoadedMatchesRef.current = true
+
       setMatches(data)
       if (data.length > 0 && !activeChatId) {
         setActiveChatId(data[0].id)
       }
+      if (hasLoadedBefore && hasNewMatch) {
+        triggerMatchPopup()
+      }
     } catch {
       // ignore
     }
-  }, [activeChatId])
+  }, [activeChatId, triggerMatchPopup])
 
   const appendChatMessage = useCallback((matchId, message) => {
     if (!message?.id) return
@@ -150,6 +180,9 @@ function App() {
           || payload.event === 'new_match'
           || payload.event === 'trade_confirmation_pending'
         ) {
+          if (payload.event === 'new_match') {
+            triggerMatchPopup()
+          }
           loadMatches()
         }
       } catch {
@@ -160,7 +193,7 @@ function App() {
 
     return () => ws.close()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeChatId, appendChatMessage, isSignedIn, loadMatches])
+  }, [activeChatId, appendChatMessage, isSignedIn, loadMatches, triggerMatchPopup])
 
   // Keep UI in sync without manual refresh
   useEffect(() => {
@@ -168,7 +201,7 @@ function App() {
     const intervalId = window.setInterval(() => {
       loadDeck()
       loadMatches()
-    }, 5000)
+    }, 2000)
     return () => window.clearInterval(intervalId)
   }, [isSignedIn, loadDeck, loadMatches])
 
@@ -298,6 +331,9 @@ function App() {
     setAuthPassword('')
     setAuthName('')
     setAuthLocation('')
+    setShowMatchPopup(false)
+    seenMatchIdsRef.current = new Set()
+    hasLoadedMatchesRef.current = false
     if (wsRef) wsRef.close()
   }
 
@@ -333,18 +369,21 @@ function App() {
   }
 
   // ── Swipe actions ─────────────────────────────────────────────────────────
-  const handleSwipe = async (targetListing, direction) => {
+  const handleSwipe = useCallback(async (targetListing, direction) => {
     try {
       const myListingsRaw = await api.getMyListings()
       if (myListingsRaw.length === 0) return null
       const result = await api.swipe(myListingsRaw[0].id, targetListing.backendId || targetListing.id, direction)
+      if (result?.match_created) {
+        triggerMatchPopup()
+      }
       await Promise.all([loadDeck(), loadMatches()])
       return result
     } catch (err) {
       console.error('Swipe failed:', err)
       return null
     }
-  }
+  }, [loadDeck, loadMatches, triggerMatchPopup])
 
   // ── Chat actions ──────────────────────────────────────────────────────────
   const sendChatMessage = async (event) => {
@@ -396,6 +435,7 @@ function App() {
   }
 
   const upgradeToPro = () => setUserPlan('pro')
+  const matchPopup = showMatchPopup ? <div className="global-match-popup">It&apos;s a match!</div> : null
 
   // ── Render ────────────────────────────────────────────────────────────────
   if (!isSignedIn) {
@@ -423,105 +463,120 @@ function App() {
 
   if (activePage === 'profile') {
     return (
-      <UserProfilePage
-        initialSection={profileStartSection}
-        userName={userName}
-        userEmail={userEmail}
-        userLocation={userLocation}
-        chatsCount={chats.length}
-        activeTradesCount={postsPaused ? 0 : userPosts.length}
-        userPosts={userPosts}
-        onDeletePost={deleteUserPost}
-        onBackToMarketplace={backToMarketplace}
-        onSaveProfile={saveUserProfile}
-        currentPlan={userPlan}
-        onUpgradeToPro={upgradeToPro}
-        postsPaused={postsPaused}
-        onTogglePostVisibility={() => setPostsPaused((prev) => !prev)}
-        darkModeOn={darkModeOn}
-        onToggleDarkMode={() => setDarkModeOn((prev) => !prev)}
-        onSignOut={handleSignOut}
-      />
+      <>
+        {matchPopup}
+        <UserProfilePage
+          initialSection={profileStartSection}
+          userName={userName}
+          userEmail={userEmail}
+          userLocation={userLocation}
+          chatsCount={chats.length}
+          activeTradesCount={postsPaused ? 0 : userPosts.length}
+          userPosts={userPosts}
+          onDeletePost={deleteUserPost}
+          onBackToMarketplace={backToMarketplace}
+          onSaveProfile={saveUserProfile}
+          currentPlan={userPlan}
+          onUpgradeToPro={upgradeToPro}
+          postsPaused={postsPaused}
+          onTogglePostVisibility={() => setPostsPaused((prev) => !prev)}
+          darkModeOn={darkModeOn}
+          onToggleDarkMode={() => setDarkModeOn((prev) => !prev)}
+          onSignOut={handleSignOut}
+        />
+      </>
     )
   }
 
   if (activePage === 'swipe') {
     return (
-      <SwipePage
-        userPlan={userPlan}
-        swipesUsed={swipesUsed}
-        freeSwipeLimit={freeSwipeLimit}
-        onConsumeSwipe={() => setSwipesUsed((prev) => prev + 1)}
-        onBackToMarketplace={backToMarketplace}
-        onSelectProduct={openOwnerProductPage}
-        deckListings={deckListings}
-        onSwipe={handleSwipe}
-      />
+      <>
+        {matchPopup}
+        <SwipePage
+          userPlan={userPlan}
+          swipesUsed={swipesUsed}
+          freeSwipeLimit={freeSwipeLimit}
+          onConsumeSwipe={() => setSwipesUsed((prev) => prev + 1)}
+          onBackToMarketplace={backToMarketplace}
+          onSelectProduct={openOwnerProductPage}
+          deckListings={deckListings}
+          onSwipe={handleSwipe}
+        />
+      </>
     )
   }
 
   if (activePage === 'owner-product') {
     return (
-      <OwnerProductPage
-        product={selectedSwipeProduct}
-        onBackToSwipe={openSwipePage}
-        onBackToMarketplace={backToMarketplace}
-      />
+      <>
+        {matchPopup}
+        <OwnerProductPage
+          product={selectedSwipeProduct}
+          onBackToSwipe={openSwipePage}
+          onBackToMarketplace={backToMarketplace}
+        />
+      </>
     )
   }
 
   if (activePage === 'create-post') {
     return (
-      <CreatePostPage
-        userName={userName}
-        onBackToMarketplace={backToMarketplace}
-        onCreatePost={createListingPost}
-      />
+      <>
+        {matchPopup}
+        <CreatePostPage
+          userName={userName}
+          onBackToMarketplace={backToMarketplace}
+          onCreatePost={createListingPost}
+        />
+      </>
     )
   }
 
   return (
-    <MarketplacePage
-      visibleListings={visibleListings}
-      onConsumeSwipe={() => setSwipesUsed((prev) => prev + 1)}
-      chats={chats}
-      listings={listings}
-      activeChatId={activeChatId}
-      setActiveChatId={setActiveChatId}
-      activeChat={activeChat}
-      activeMessages={activeMessages}
-      userName={userName}
-      currentUserId={currentUser?.id}
-      myInventory={userPostedItems}
-      chatInput={chatInput}
-      setChatInput={setChatInput}
-      sendChatMessage={sendChatMessage}
-      onOpenProfile={openUserProfile}
-      onOpenMembershipPlans={openMembershipPlans}
-      onOpenSwipe={openSwipePage}
-      onOpenCreatePost={openCreatePostPage}
-      userPlan={userPlan}
-      swipesUsed={swipesUsed}
-      freeSwipeLimit={freeSwipeLimit}
-      deckListings={deckListings}
-      onSwipe={handleSwipe}
-      onConfirmTrade={async (matchId) => {
-        try {
-          await api.confirmTrade(matchId)
-          await loadMatches()
-        } catch (err) {
-          console.error('Failed to confirm trade:', err)
-        }
-      }}
-      onCancelMatch={async (matchId) => {
-        try {
-          await api.cancelMatch(matchId)
-          await loadMatches()
-        } catch (err) {
-          console.error('Failed to cancel match:', err)
-        }
-      }}
-    />
+    <>
+      {matchPopup}
+      <MarketplacePage
+        visibleListings={visibleListings}
+        onConsumeSwipe={() => setSwipesUsed((prev) => prev + 1)}
+        chats={chats}
+        listings={listings}
+        activeChatId={activeChatId}
+        setActiveChatId={setActiveChatId}
+        activeChat={activeChat}
+        activeMessages={activeMessages}
+        userName={userName}
+        currentUserId={currentUser?.id}
+        myInventory={userPostedItems}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+        sendChatMessage={sendChatMessage}
+        onOpenProfile={openUserProfile}
+        onOpenMembershipPlans={openMembershipPlans}
+        onOpenSwipe={openSwipePage}
+        onOpenCreatePost={openCreatePostPage}
+        userPlan={userPlan}
+        swipesUsed={swipesUsed}
+        freeSwipeLimit={freeSwipeLimit}
+        deckListings={deckListings}
+        onSwipe={handleSwipe}
+        onConfirmTrade={async (matchId) => {
+          try {
+            await api.confirmTrade(matchId)
+            await loadMatches()
+          } catch (err) {
+            console.error('Failed to confirm trade:', err)
+          }
+        }}
+        onCancelMatch={async (matchId) => {
+          try {
+            await api.cancelMatch(matchId)
+            await loadMatches()
+          } catch (err) {
+            console.error('Failed to cancel match:', err)
+          }
+        }}
+      />
+    </>
   )
 }
 

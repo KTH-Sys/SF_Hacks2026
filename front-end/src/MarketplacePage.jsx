@@ -33,22 +33,10 @@ function MarketplacePage({
     'Swipe left or right to discover your next trade.',
   )
   const [showChoiceOverlay, setShowChoiceOverlay] = useState(false)
-  const [showMatchPopup, setShowMatchPopup] = useState(false)
   const [dragOffset, setDragOffset] = useState(0)
   const dragStartXRef = useRef(null)
   const wheelDeltaXRef = useRef(0)
   const lastWheelSwipeAtRef = useRef(0)
-  const matchPopupTimerRef = useRef(null)
-
-  const triggerMatchPopup = useCallback(() => {
-    setShowMatchPopup(true)
-    if (matchPopupTimerRef.current) {
-      window.clearTimeout(matchPopupTimerRef.current)
-    }
-    matchPopupTimerRef.current = window.setTimeout(() => {
-      setShowMatchPopup(false)
-    }, 1800)
-  }, [])
 
   const swipeSource = visibleListings.length ? visibleListings : deckListings
   const swipeListings = swipeSource.filter((listing) => listing.owner !== userName)
@@ -93,7 +81,6 @@ function MarketplacePage({
 
     onSwipe(currentSwipeListing, 'right').then((result) => {
       if (result?.match_created) {
-        triggerMatchPopup()
         setSwipeStatusMessage('It\'s a match! Check your chats.')
       }
     })
@@ -102,7 +89,7 @@ function MarketplacePage({
       setShowChoiceOverlay(false)
       setCurrentSwipeIndex((prev) => prev + 1)
     }, 560)
-  }, [currentSwipeListing, freeLimitReached, onConsumeSwipe, onSwipe, showChoiceOverlay, triggerMatchPopup])
+  }, [currentSwipeListing, freeLimitReached, onConsumeSwipe, onSwipe, showChoiceOverlay])
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -134,14 +121,6 @@ function MarketplacePage({
     return () => window.removeEventListener('wheel', onWheel)
   }, [swipeLeft, swipeRight])
 
-  useEffect(() => {
-    return () => {
-      if (matchPopupTimerRef.current) {
-        window.clearTimeout(matchPopupTimerRef.current)
-      }
-    }
-  }, [])
-
   const onPointerDownCard = (event) => {
     if (freeLimitReached || showChoiceOverlay) return
     dragStartXRef.current = event.clientX
@@ -168,7 +147,6 @@ function MarketplacePage({
 
   return (
     <div className="trade-app">
-      {showMatchPopup && <div className="match-popup">It&apos;s a match!</div>}
       <header className="hero">
         <div className="hero-top">
           <p className="eyebrow">Barter</p>
