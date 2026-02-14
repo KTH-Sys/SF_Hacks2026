@@ -9,7 +9,6 @@ Model loads in ~2s on CPU. Set VISION_ENABLED=false in .env to skip.
 import base64
 import io
 import logging
-from typing import Optional
 
 import torch
 import torch.nn.functional as F
@@ -55,8 +54,18 @@ def load_model():
        https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt
     4. Store both in module-level _model and _labels
     """
-    # TODO: implement
-    raise NotImplementedError
+    global _model, _labels
+
+    weights = models.MobileNet_V2_Weights.IMAGENET1K_V1
+    _model = models.mobilenet_v2(weights=weights)
+    _model.eval()
+
+    # Prefer torchvision's built-in class list to avoid network dependency.
+    _labels = list(weights.meta.get("categories", []))
+    if not _labels:
+        raise RuntimeError("Failed to load ImageNet labels for vision model.")
+
+    logger.info("Vision model loaded with %d labels", len(_labels))
 
 
 def classify_image(image_b64: str) -> dict:
@@ -80,8 +89,45 @@ def classify_image(image_b64: str) -> dict:
     """
     if _model is None:
         raise RuntimeError("Vision model not loaded. Call load_model() first.")
-    # TODO: implement
-    raise NotImplementedError
+    if not image_b64:
+        raise ValueError("image_b64 is required")
+
+    if "," in image_b64 and image_b64.split(",", 1)[0].startswith("data:image/"):
+        image_b64 = image_b64.split(",", 1)[1]
+
+    try:
+        image_bytes = base64.b64decode(image_b64)
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except Exception as e:
+        raise ValueError(f"Invalid image payload: {e}") from e
+
+    tensor = _TRANSFORM(image).unsqueeze(0)
+
+    with torch.no_grad():
+        logits = _model(tensor)
+        probs = F.softmax(logits, dim=1).squeeze(0)
+        top_probs, top_indices = torch.topk(probs, 5)
+
+    top5 = []
+    for score, idx in zip(top_probs.tolist(), top_indices.tolist()):
+        label = _labels[idx] if idx < len(_labels) else str(idx)
+        top5.append({"label": label, "score": float(score)})
+
+    top_label = top5[0]["label"]
+    category = _map_label(top_label)
+    if category == "other":
+        for candidate in top5[1:]:
+            candidate_category = _map_label(candidate["label"])
+            if candidate_category != "other":
+                category = candidate_category
+                break
+
+    return {
+        "category": category,
+        "imagenet_label": top_label,
+        "confidence": float(top5[0]["score"]),
+        "top5": top5,
+    }
 
 
 def _map_label(label: str) -> str:

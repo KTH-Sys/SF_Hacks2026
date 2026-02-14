@@ -73,8 +73,21 @@ async def estimate_value(
     4. Return ValueEstimateResponse(**result)
     5. Catch RuntimeError → HTTP 502
     """
-    # TODO: implement
-    raise NotImplementedError
+    if not settings.GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini service is not configured")
+
+    from services.gemini import estimate_value as gemini_estimate
+
+    try:
+        result = await gemini_estimate(
+            title=payload.title,
+            category=payload.category,
+            condition=payload.condition,
+            description=payload.description,
+        )
+        return ValueEstimateResponse(**result)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.post("/generate-desc", response_model=DescriptionResponse)
@@ -93,8 +106,20 @@ async def generate_description(
     4. Return DescriptionResponse(description=text)
     5. Catch RuntimeError → HTTP 502
     """
-    # TODO: implement
-    raise NotImplementedError
+    if not settings.GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini service is not configured")
+
+    from services.gemini import generate_description as gemini_desc
+
+    try:
+        text = await gemini_desc(
+            title=payload.title,
+            category=payload.category,
+            condition=payload.condition,
+        )
+        return DescriptionResponse(description=text)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.post("/classify-image", response_model=ClassifyImageResponse)
@@ -114,5 +139,15 @@ async def classify_image(
     5. Catch RuntimeError → HTTP 500
     6. Catch other Exception → HTTP 400 "Image processing error: {e}"
     """
-    # TODO: implement
-    raise NotImplementedError
+    if not settings.VISION_ENABLED:
+        raise HTTPException(status_code=503, detail="Vision service is disabled")
+
+    from services.vision import classify_image as torch_classify
+
+    try:
+        result = torch_classify(payload.image_b64)
+        return ClassifyImageResponse(**result)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image processing error: {e}") from e
