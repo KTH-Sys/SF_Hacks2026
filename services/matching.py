@@ -53,5 +53,67 @@ async def build_swipe_deck(
         )
         swiped_ids = {doc["target_listing_id"] async for doc in already_swiped_cursor}
     """
-    # TODO: implement
-    raise NotImplementedError
+    target_category = category_filter or my_listing["category"]
+    low_value, high_value = value_range_filter(float(my_listing["estimated_value"]))
+
+    already_swiped_cursor = db[SWIPES].find(
+        {"swiper_id": current_user["id"], "swiper_listing_id": my_listing["id"]},
+        {"target_listing_id": 1},
+    )
+    swiped_ids = {doc["target_listing_id"] async for doc in already_swiped_cursor}
+
+    query = {
+        "user_id": {"$ne": current_user["id"]},
+        "status": "active",
+        "category": target_category,
+        "estimated_value": {"$gte": low_value, "$lte": high_value},
+    }
+    if swiped_ids:
+        query["_id"] = {"$nin": list(swiped_ids)}
+
+    origin_lat = (
+        my_listing.get("latitude")
+        if my_listing.get("latitude") is not None
+        else current_user.get("latitude")
+    )
+    origin_lon = (
+        my_listing.get("longitude")
+        if my_listing.get("longitude") is not None
+        else current_user.get("longitude")
+    )
+
+    deck: List[SwipeDeckItem] = []
+    async for raw_candidate in db[LISTINGS].find(query):
+        candidate = serialize_doc(raw_candidate)
+        distance_km = None
+
+        candidate_lat = candidate.get("latitude")
+        candidate_lon = candidate.get("longitude")
+        if (
+            origin_lat is not None
+            and origin_lon is not None
+            and candidate_lat is not None
+            and candidate_lon is not None
+        ):
+            distance_km = haversine_km(origin_lat, origin_lon, candidate_lat, candidate_lon)
+            if distance_km > radius_km:
+                continue
+
+        owner_raw = await db[USERS].find_one({"_id": candidate["user_id"]})
+        if not owner_raw:
+            continue
+        owner = serialize_doc(owner_raw)
+
+        candidate["distance_km"] = distance_km
+        deck.append(
+            SwipeDeckItem(
+                **candidate,
+                owner_name=owner.get("display_name", "Unknown"),
+                owner_avatar=owner.get("avatar_url"),
+                owner_rating=float(owner.get("rating_avg", 0.0)),
+                owner_trade_count=int(owner.get("rating_count", 0)),
+            )
+        )
+
+    deck.sort(key=lambda item: (item.distance_km is None, item.distance_km or float("inf")))
+    return deck[: settings.MAX_SWIPE_DECK_SIZE]

@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserRegister(BaseModel):
@@ -24,6 +24,8 @@ class UserUpdate(BaseModel):
 
 
 class UserPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     display_name: str
     avatar_url: Optional[str]
@@ -33,18 +35,12 @@ class UserPublic(BaseModel):
     rating_count: int
     is_verified: bool
 
-    class Config:
-        from_attributes = True
-
 
 class UserPrivate(UserPublic):
     email: str
     latitude: Optional[float]
     longitude: Optional[float]
     trade_radius_km: float
-
-    class Config:
-        from_attributes = True
 
 
 class TokenResponse(BaseModel):

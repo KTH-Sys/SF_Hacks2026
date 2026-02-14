@@ -1,8 +1,10 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Barter API"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    APP_NAME: str = "Barter"
     DEBUG: bool = True
 
     # MongoDB Atlas
@@ -28,9 +30,6 @@ class Settings(BaseSettings):
 
     # Upload
     MAX_IMAGES_PER_LISTING: int = 6
-
-    class Config:
-        env_file = ".env"
 
 
 settings = Settings()

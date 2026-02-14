@@ -1,6 +1,6 @@
 from typing import List
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MessageCreate(BaseModel):
@@ -9,6 +9,8 @@ class MessageCreate(BaseModel):
 
 
 class MessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     match_id: str
     sender_id: str
@@ -16,9 +18,6 @@ class MessageOut(BaseModel):
     content: str
     type: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class ChatHistory(BaseModel):

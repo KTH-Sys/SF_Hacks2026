@@ -6,7 +6,7 @@ FastAPI backend for Barter — "Tinder for Used Product Trade."
 
 ```bash
 # 1. Clone and enter the directory
-cd swapr-backend
+cd barter-backend
 
 # 2. Create virtual environment
 python3 -m venv .venv

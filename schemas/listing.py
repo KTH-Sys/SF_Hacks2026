@@ -1,6 +1,8 @@
 from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field, validator
+import json
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from models import CATEGORIES, CONDITIONS
 
 
@@ -10,17 +12,19 @@ class ListingCreate(BaseModel):
     category: str
     condition: str
     estimated_value: float = Field(gt=0)
-    images: List[str] = Field(default_factory=list, max_items=6)  # base64 or URLs
+    images: List[str] = Field(default_factory=list, max_length=6)  # base64 or URLs
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
-    @validator("category")
+    @field_validator("category")
+    @classmethod
     def validate_category(cls, v):
         if v not in CATEGORIES:
             raise ValueError(f"category must be one of: {CATEGORIES}")
         return v
 
-    @validator("condition")
+    @field_validator("condition")
+    @classmethod
     def validate_condition(cls, v):
         if v not in CONDITIONS:
             raise ValueError(f"condition must be one of: {CONDITIONS}")
@@ -37,6 +41,8 @@ class ListingUpdate(BaseModel):
 
 
 class ListingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     user_id: str
     title: str
@@ -52,13 +58,10 @@ class ListingOut(BaseModel):
     created_at: datetime
     distance_km: Optional[float] = None  # injected at query time
 
-    class Config:
-        from_attributes = True
-
-    @validator("images", pre=True)
+    @field_validator("images", mode="before")
+    @classmethod
     def parse_images(cls, v):
         if isinstance(v, str):
-            import json
             try:
                 return json.loads(v)
             except Exception:

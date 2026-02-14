@@ -10,7 +10,6 @@ import json
 from typing import Optional
 
 from google import genai
-from google.genai import types
 
 from core.config import settings
 
@@ -48,8 +47,77 @@ async def estimate_value(
         if text.startswith("```"):
             text = text.split("```")[1].lstrip("json")
     """
-    # TODO: implement
-    raise NotImplementedError
+    prompt = f"""
+You are estimating fair market value for a used item in USD.
+Return ONLY valid JSON (no markdown, no code fence) with exactly these keys:
+{{
+  "min_value": number,
+  "max_value": number,
+  "suggested_value": number,
+  "reasoning": string,
+  "confidence": "low" | "medium" | "high"
+}}
+
+Item details:
+- title: {title}
+- category: {category}
+- condition: {condition}
+- description: {description or "N/A"}
+""".strip()
+
+    client = _get_client()
+    try:
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Gemini request failed: {e}") from e
+
+    text = (response.text or "").strip()
+    if not text:
+        raise RuntimeError("Gemini returned an empty response")
+
+    if text.startswith("```"):
+        text = text.strip("`").strip()
+        if text.startswith("json"):
+            text = text[4:].strip()
+
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise RuntimeError("Gemini returned non-JSON output")
+        try:
+            data = json.loads(text[start : end + 1])
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse Gemini JSON: {e}") from e
+
+    try:
+        result = {
+            "min_value": float(data["min_value"]),
+            "max_value": float(data["max_value"]),
+            "suggested_value": float(data["suggested_value"]),
+            "reasoning": str(data["reasoning"]).strip(),
+            "confidence": str(data["confidence"]).strip().lower(),
+        }
+    except KeyError as e:
+        raise RuntimeError(f"Gemini response missing key: {e}") from e
+    except (TypeError, ValueError) as e:
+        raise RuntimeError(f"Gemini response has invalid value types: {e}") from e
+
+    if result["min_value"] > result["max_value"]:
+        result["min_value"], result["max_value"] = result["max_value"], result["min_value"]
+    if result["suggested_value"] < result["min_value"]:
+        result["suggested_value"] = result["min_value"]
+    if result["suggested_value"] > result["max_value"]:
+        result["suggested_value"] = result["max_value"]
+    if result["confidence"] not in {"low", "medium", "high"}:
+        result["confidence"] = "medium"
+
+    return result
 
 
 async def generate_description(title: str, category: str, condition: str) -> str:
@@ -62,5 +130,26 @@ async def generate_description(title: str, category: str, condition: str) -> str
     2. Call generate_content
     3. Return response.text.strip()
     """
-    # TODO: implement
-    raise NotImplementedError
+    prompt = f"""
+Write a compelling 2-3 sentence listing description for a used item.
+Do not include any price, bullet points, markdown, or hashtags.
+
+Item details:
+- title: {title}
+- category: {category}
+- condition: {condition}
+""".strip()
+
+    client = _get_client()
+    try:
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Gemini request failed: {e}") from e
+
+    text = (response.text or "").strip()
+    if not text:
+        raise RuntimeError("Gemini returned an empty response")
+    return text

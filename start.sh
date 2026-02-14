@@ -26,4 +26,4 @@ echo ""
 echo "✅ Starting Barter API on http://localhost:8000"
 echo "   Swagger docs: http://localhost:8000/docs"
 echo ""
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000

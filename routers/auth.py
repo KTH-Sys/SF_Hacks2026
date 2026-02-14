@@ -17,26 +17,41 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(payload: UserRegister, db: AsyncIOMotorDatabase = Depends(get_db)):
-    # TODO:
-    # 1. Call new_user() to build a user document
-    # 2. Insert into db[USERS] — catch DuplicateKeyError for duplicate email
-    # 3. Return TokenResponse with create_access_token(subject=user["id"])
-    raise NotImplementedError
+    user_doc = new_user(
+        email=str(payload.email).lower(),
+        hashed_password=hash_password(payload.password),
+        display_name=payload.display_name,
+    )
+    try:
+        await db[USERS].insert_one(user_doc)
+    except DuplicateKeyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email is already registered",
+        ) from e
+
+    token = create_access_token(subject=user_doc["_id"])
+    user = UserPrivate(**serialize_doc(user_doc))
+    return TokenResponse(access_token=token, user=user)
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: UserLogin, db: AsyncIOMotorDatabase = Depends(get_db)):
-    # TODO:
-    # 1. Find user by email in db[USERS]
-    # 2. Verify password with verify_password()
-    # 3. Return TokenResponse with token
-    raise NotImplementedError
+    user_raw = await db[USERS].find_one({"email": str(payload.email).lower()})
+    if not user_raw or not verify_password(payload.password, user_raw.get("hashed_password", "")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+
+    user = serialize_doc(user_raw)
+    token = create_access_token(subject=user["id"])
+    return TokenResponse(access_token=token, user=UserPrivate(**user))
 
 
 @router.get("/me", response_model=UserPrivate)
 async def get_me(current_user: dict = Depends(get_current_user)):
-    # TODO: Return UserPrivate(**current_user)
-    raise NotImplementedError
+    return UserPrivate(**current_user)
 
 
 @router.patch("/me", response_model=UserPrivate)
@@ -45,9 +60,14 @@ async def update_me(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    # TODO:
-    # 1. Build updates dict from payload.dict(exclude_unset=True)
-    # 2. Add "updated_at": datetime.utcnow()
-    # 3. db[USERS].update_one({"_id": current_user["id"]}, {"$set": updates})
-    # 4. Re-fetch and return updated user
-    raise NotImplementedError
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        return UserPrivate(**current_user)
+
+    updates["updated_at"] = datetime.utcnow()
+    await db[USERS].update_one({"_id": current_user["id"]}, {"$set": updates})
+
+    user_raw = await db[USERS].find_one({"_id": current_user["id"]})
+    if not user_raw:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return UserPrivate(**serialize_doc(user_raw))
