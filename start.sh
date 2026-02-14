@@ -2,6 +2,9 @@
 # One-command local dev start for Barter backend
 set -e
 
+# Always run from the directory containing this script
+cd "$(dirname "$0")"
+
 # Create venv if missing
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment..."

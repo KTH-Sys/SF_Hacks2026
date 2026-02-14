@@ -50,6 +50,8 @@ Already-swiped listings are excluded. Results are sorted by distance (closest fi
 
 ## Quick Start
 
+### macOS / Linux
+
 ```bash
 # 1. Clone and enter the directory
 cd barter-backend
@@ -66,6 +68,32 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # Fill in MONGODB_URL and GEMINI_API_KEY in .env
+python -m uvicorn main:app --reload --port 8000
+```
+
+### Windows
+
+**Script (PowerShell):**
+
+```powershell
+# 1. Enter the directory
+cd barter-backend
+
+# 2. Run the start script
+.\start.ps1
+```
+
+> If you get an execution policy error, run this first:
+> `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
+**Or manually (Command Prompt / PowerShell):**
+
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+REM Fill in MONGODB_URL and GEMINI_API_KEY in .env
 python -m uvicorn main:app --reload --port 8000
 ```
 
