@@ -1,0 +1,118 @@
+# ── DEV 1 OWNS THIS FILE ──────────────────────────────────────────────────────
+"""
+AI endpoints — Gemini + PyTorch
+
+POST /ai/estimate-value    → Gemini value estimation from item details
+POST /ai/generate-desc     → Gemini listing description generator
+POST /ai/classify-image    → PyTorch MobileNetV2 category detection from base64 image
+"""
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from core.config import settings
+from core.dependencies import get_current_user
+
+router = APIRouter(prefix="/ai", tags=["ai"])
+
+
+# ─── Schemas ──────────────────────────────────────────────────────────────────
+
+class ValueEstimateRequest(BaseModel):
+    title: str
+    category: str
+    condition: str
+    description: Optional[str] = None
+
+
+class ValueEstimateResponse(BaseModel):
+    min_value: float
+    max_value: float
+    suggested_value: float
+    reasoning: str
+    confidence: str
+
+
+class DescriptionRequest(BaseModel):
+    title: str
+    category: str
+    condition: str
+
+
+class DescriptionResponse(BaseModel):
+    description: str
+
+
+class ClassifyImageRequest(BaseModel):
+    image_b64: str   # base64 string, with or without "data:image/...;base64," prefix
+
+
+class ClassifyImageResponse(BaseModel):
+    category: str
+    imagenet_label: str
+    confidence: float
+    top5: list
+
+
+# ─── Endpoints ────────────────────────────────────────────────────────────────
+
+@router.post("/estimate-value", response_model=ValueEstimateResponse)
+async def estimate_value(
+    payload: ValueEstimateRequest,
+    _: dict = Depends(get_current_user),   # auth required
+):
+    """
+    Use Gemini to estimate fair market value for a used item.
+    Call this before posting a listing to suggest a price.
+
+    TODO:
+    1. Check settings.GEMINI_API_KEY — raise HTTP 503 if missing
+    2. Import services.gemini.estimate_value
+    3. Call await gemini_estimate(title, category, condition, description)
+    4. Return ValueEstimateResponse(**result)
+    5. Catch RuntimeError → HTTP 502
+    """
+    # TODO: implement
+    raise NotImplementedError
+
+
+@router.post("/generate-desc", response_model=DescriptionResponse)
+async def generate_description(
+    payload: DescriptionRequest,
+    _: dict = Depends(get_current_user),
+):
+    """
+    Use Gemini to write a 2-3 sentence listing description.
+    Call this when the user wants AI to fill in the description field.
+
+    TODO:
+    1. Check settings.GEMINI_API_KEY — raise HTTP 503 if missing
+    2. Import services.gemini.generate_description
+    3. Call await gemini_desc(title, category, condition)
+    4. Return DescriptionResponse(description=text)
+    5. Catch RuntimeError → HTTP 502
+    """
+    # TODO: implement
+    raise NotImplementedError
+
+
+@router.post("/classify-image", response_model=ClassifyImageResponse)
+async def classify_image(
+    payload: ClassifyImageRequest,
+    _: dict = Depends(get_current_user),
+):
+    """
+    Run PyTorch MobileNetV2 on the uploaded image to predict item category.
+    Call this when user uploads a photo — auto-fill the category selector.
+
+    TODO:
+    1. Check settings.VISION_ENABLED — raise HTTP 503 if False
+    2. Import services.vision.classify_image
+    3. Call torch_classify(payload.image_b64) — sync, not async
+    4. Return ClassifyImageResponse(**result)
+    5. Catch RuntimeError → HTTP 500
+    6. Catch other Exception → HTTP 400 "Image processing error: {e}"
+    """
+    # TODO: implement
+    raise NotImplementedError
