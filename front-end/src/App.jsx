@@ -59,7 +59,15 @@ function App() {
     }
     matchPopupTimerRef.current = window.setTimeout(() => {
       setShowMatchPopup(false)
-    }, 1800)
+    }, 3000)
+  }, [])
+
+  const dismissMatchPopup = useCallback(() => {
+    if (matchPopupTimerRef.current) {
+      window.clearTimeout(matchPopupTimerRef.current)
+      matchPopupTimerRef.current = null
+    }
+    setShowMatchPopup(false)
   }, [])
 
   useEffect(() => {
@@ -74,6 +82,15 @@ function App() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (!showMatchPopup) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') dismissMatchPopup()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [dismissMatchPopup, showMatchPopup])
 
   // ── Restore session on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -331,7 +348,7 @@ function App() {
     setAuthPassword('')
     setAuthName('')
     setAuthLocation('')
-    setShowMatchPopup(false)
+    dismissMatchPopup()
     seenMatchIdsRef.current = new Set()
     hasLoadedMatchesRef.current = false
     if (wsRef) wsRef.close()
@@ -435,7 +452,15 @@ function App() {
   }
 
   const upgradeToPro = () => setUserPlan('pro')
-  const matchPopup = showMatchPopup ? <div className="global-match-popup">It&apos;s a match!</div> : null
+  const matchPopup = (showMatchPopup && activePage === 'marketplace') ? (
+    <div className="market-match-modal-backdrop" onClick={dismissMatchPopup}>
+      <div className="market-match-modal" onClick={(event) => event.stopPropagation()}>
+        <h2>It&apos;s a match!</h2>
+        <p>You both swiped right. Open Chats to start negotiating the trade.</p>
+        <button type="button" onClick={dismissMatchPopup}>Awesome</button>
+      </div>
+    </div>
+  ) : null
 
   // ── Render ────────────────────────────────────────────────────────────────
   if (!isSignedIn) {
