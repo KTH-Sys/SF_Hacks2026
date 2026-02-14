@@ -6,6 +6,7 @@ POST /ai/estimate-value    → Gemini value estimation from item details
 POST /ai/generate-desc     → Gemini listing description generator
 POST /ai/classify-image    → PyTorch MobileNetV2 category detection from base64 image
 """
+import asyncio
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -62,17 +63,7 @@ async def estimate_value(
     payload: ValueEstimateRequest,
     _: dict = Depends(get_current_user),   # auth required
 ):
-    """
-    Use Gemini to estimate fair market value for a used item.
-    Call this before posting a listing to suggest a price.
-
-    TODO:
-    1. Check settings.GEMINI_API_KEY — raise HTTP 503 if missing
-    2. Import services.gemini.estimate_value
-    3. Call await gemini_estimate(title, category, condition, description)
-    4. Return ValueEstimateResponse(**result)
-    5. Catch RuntimeError → HTTP 502
-    """
+    """Use Gemini to estimate fair market value for a used item."""
     if not settings.GEMINI_API_KEY:
         raise HTTPException(status_code=503, detail="Gemini service is not configured")
 
@@ -95,17 +86,7 @@ async def generate_description(
     payload: DescriptionRequest,
     _: dict = Depends(get_current_user),
 ):
-    """
-    Use Gemini to write a 2-3 sentence listing description.
-    Call this when the user wants AI to fill in the description field.
-
-    TODO:
-    1. Check settings.GEMINI_API_KEY — raise HTTP 503 if missing
-    2. Import services.gemini.generate_description
-    3. Call await gemini_desc(title, category, condition)
-    4. Return DescriptionResponse(description=text)
-    5. Catch RuntimeError → HTTP 502
-    """
+    """Use Gemini to write a 2-3 sentence listing description."""
     if not settings.GEMINI_API_KEY:
         raise HTTPException(status_code=503, detail="Gemini service is not configured")
 
@@ -127,25 +108,14 @@ async def classify_image(
     payload: ClassifyImageRequest,
     _: dict = Depends(get_current_user),
 ):
-    """
-    Run PyTorch MobileNetV2 on the uploaded image to predict item category.
-    Call this when user uploads a photo — auto-fill the category selector.
-
-    TODO:
-    1. Check settings.VISION_ENABLED — raise HTTP 503 if False
-    2. Import services.vision.classify_image
-    3. Call torch_classify(payload.image_b64) — sync, not async
-    4. Return ClassifyImageResponse(**result)
-    5. Catch RuntimeError → HTTP 500
-    6. Catch other Exception → HTTP 400 "Image processing error: {e}"
-    """
+    """Run PyTorch MobileNetV2 on the uploaded image to predict item category."""
     if not settings.VISION_ENABLED:
         raise HTTPException(status_code=503, detail="Vision service is disabled")
 
     from services.vision import classify_image as torch_classify
 
     try:
-        result = torch_classify(payload.image_b64)
+        result = await asyncio.to_thread(torch_classify, payload.image_b64)
         return ClassifyImageResponse(**result)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

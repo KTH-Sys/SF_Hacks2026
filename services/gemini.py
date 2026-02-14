@@ -6,6 +6,7 @@ Uses the google-genai SDK: from google import genai
 Docs: https://ai.google.dev/gemini-api/docs/quickstart?lang=python
 Get key: https://aistudio.google.com/app/apikey
 """
+import asyncio
 import json
 from typing import Optional
 
@@ -35,17 +36,6 @@ async def estimate_value(
         suggested_value: float
         reasoning: str
         confidence: "low" | "medium" | "high"
-
-    TODO:
-    1. Build a prompt that gives Gemini the item details
-    2. Tell it to respond ONLY with a JSON object (no markdown)
-    3. Call client.models.generate_content(model=settings.GEMINI_MODEL, contents=prompt)
-    4. Parse response.text as JSON — handle JSONDecodeError gracefully
-    5. Return the dict
-
-    Hint — strip markdown fences if present:
-        if text.startswith("```"):
-            text = text.split("```")[1].lstrip("json")
     """
     prompt = f"""
 You are estimating fair market value for a used item in USD.
@@ -67,7 +57,8 @@ Item details:
 
     client = _get_client()
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.GEMINI_MODEL,
             contents=prompt,
         )
@@ -124,11 +115,6 @@ async def generate_description(title: str, category: str, condition: str) -> str
     """
     Ask Gemini to write a 2-3 sentence listing description for a used item.
     Should NOT include price. Returns plain text string.
-
-    TODO:
-    1. Build a prompt with item details
-    2. Call generate_content
-    3. Return response.text.strip()
     """
     prompt = f"""
 Write a compelling 2-3 sentence listing description for a used item.
@@ -142,7 +128,8 @@ Item details:
 
     client = _get_client()
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.GEMINI_MODEL,
             contents=prompt,
         )

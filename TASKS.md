@@ -19,7 +19,7 @@ cp .env.example .env
 #    Option B — Atlas free tier: create cluster at mongodb.com, paste URI into MONGODB_URL
 
 # 5. Run
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 # Swagger docs: http://localhost:8000/docs
 ```
 

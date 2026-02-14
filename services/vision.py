@@ -43,17 +43,7 @@ _labels: list = []
 
 
 def load_model():
-    """
-    Load MobileNetV2 + ImageNet class labels.
-    Called once at startup from main.py lifespan.
-
-    TODO:
-    1. Load model: models.mobilenet_v2(weights=models.MobileNet_V2_Weights.IMAGENET1K_V1)
-    2. Set model.eval()
-    3. Fetch labels from:
-       https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt
-    4. Store both in module-level _model and _labels
-    """
+    """Load MobileNetV2 + ImageNet class labels. Called once at startup from main.py lifespan."""
     global _model, _labels
 
     weights = models.MobileNet_V2_Weights.IMAGENET1K_V1
@@ -71,21 +61,7 @@ def load_model():
 def classify_image(image_b64: str) -> dict:
     """
     Classify a base64-encoded image.
-
-    Returns:
-        {
-            "category": str,          # e.g. "electronics"
-            "imagenet_label": str,    # e.g. "laptop"
-            "confidence": float,      # 0.0 – 1.0
-            "top5": list[dict]        # [{label, score}, ...]
-        }
-
-    TODO:
-    1. Strip "data:image/...;base64," prefix if present
-    2. base64.b64decode → PIL Image → apply _TRANSFORM → unsqueeze(0)
-    3. torch.no_grad() → _model(tensor) → F.softmax → torch.topk(probs, 5)
-    4. Map top label to category using _map_label()
-    5. If top-1 maps to "other", try top-2 through top-5 for a better match
+    Returns category, imagenet_label, confidence (0-1), and top5 predictions.
     """
     if _model is None:
         raise RuntimeError("Vision model not loaded. Call load_model() first.")
