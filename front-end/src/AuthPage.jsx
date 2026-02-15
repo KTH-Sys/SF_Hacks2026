@@ -22,11 +22,10 @@ function AuthPage({
     <div className="auth-wrap">
       <section className="auth-card">
         <div className="auth-hero">
-          <p className="eyebrow">TradeLoop Market</p>
+          <p className="eyebrow">Barter</p>
           <h1>{authMode === 'signin' ? 'Sign in to start trading' : 'Create your trader account'}</h1>
           <p>
-            Connect with local traders, exchange products, and chat directly to negotiate the
-            perfect swap.
+            Trade what you have for what you want. Swipe, match, and chat instantly with nearby users.
           </p>
         </div>
 

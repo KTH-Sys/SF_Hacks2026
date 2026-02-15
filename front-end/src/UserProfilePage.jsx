@@ -4,12 +4,14 @@ import PaymentDetailsModal from './PaymentDetailsModal'
 
 function UserProfilePage({
   initialSection = 'about',
+  initialPaymentTarget = null,
   userName,
   userEmail,
   userLocation,
   chatsCount,
   activeTradesCount,
   userPosts,
+  onEditPost,
   onDeletePost,
   onBackToMarketplace,
   onSaveProfile,
@@ -87,6 +89,14 @@ function UserProfilePage({
   useEffect(() => {
     setActiveSection(initialSection)
   }, [initialSection])
+
+  useEffect(() => {
+    if (initialPaymentTarget === 'boost') {
+      setActiveSection('plans')
+      setPaymentTarget('boost')
+      setShowPaymentModal(true)
+    }
+  }, [initialPaymentTarget])
 
   const startEditAbout = () => {
     setDraftName(userName)
@@ -474,13 +484,22 @@ function UserProfilePage({
                             {post.category} · {post.condition} · {post.location}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          className="delete-post-button"
-                          onClick={() => onDeletePost(post.id)}
-                        >
-                          Delete
-                        </button>
+                        <div className="manage-post-actions">
+                          <button
+                            type="button"
+                            className="edit-post-button"
+                            onClick={() => onEditPost && onEditPost(post)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="delete-post-button"
+                            onClick={() => onDeletePost(post.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>

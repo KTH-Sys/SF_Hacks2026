@@ -29,6 +29,7 @@ function App() {
 
   const [postsPaused, setPostsPaused] = useState(false)
   const [profileStartSection, setProfileStartSection] = useState('about')
+  const [profileStartPaymentTarget, setProfileStartPaymentTarget] = useState(null)
   const [activePage, setActivePage] = useState('marketplace')
   const [swipesUsed, setSwipesUsed] = useState(0)
   const [selectedSwipeProduct, setSelectedSwipeProduct] = useState(null)
@@ -420,6 +421,7 @@ function App() {
     setAuthPassword('')
     setAuthName('')
     setAuthLocation('')
+    setProfileStartPaymentTarget(null)
     dismissMatchPopup()
     seenMatchIdsRef.current = new Set()
     hasLoadedMatchesRef.current = false
@@ -465,6 +467,36 @@ function App() {
     }
   }
 
+  const editUserPost = async (post) => {
+    const nextTitle = window.prompt('Edit title', post.title || '')
+    if (nextTitle === null) return
+
+    const nextDescription = window.prompt('Edit description', post.description || '')
+    if (nextDescription === null) return
+
+    const priceDefault = Number(post.price || 0) > 0 ? String(post.price) : '50'
+    const nextPriceRaw = window.prompt('Edit price', priceDefault)
+    if (nextPriceRaw === null) return
+
+    const nextPrice = Number(nextPriceRaw)
+    if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+      window.alert('Price must be a positive number.')
+      return
+    }
+
+    try {
+      await api.updateListing(post.id, {
+        title: nextTitle.trim() || post.title,
+        description: nextDescription.trim(),
+        estimatedValue: nextPrice,
+      })
+      await loadMyListings()
+      await loadDeck()
+    } catch (err) {
+      console.error('Failed to edit listing:', err)
+    }
+  }
+
   // ── Swipe actions ─────────────────────────────────────────────────────────
   const handleSwipe = useCallback(async (targetListing, direction) => {
     try {
@@ -505,11 +537,19 @@ function App() {
   // ── Navigation ────────────────────────────────────────────────────────────
   const openUserProfile = () => {
     setProfileStartSection('about')
+    setProfileStartPaymentTarget(null)
     setActivePage('profile')
   }
 
   const openMembershipPlans = () => {
     setProfileStartSection('plans')
+    setProfileStartPaymentTarget(null)
+    setActivePage('profile')
+  }
+
+  const openBoostPaymentDetails = () => {
+    setProfileStartSection('plans')
+    setProfileStartPaymentTarget('boost')
     setActivePage('profile')
   }
 
@@ -578,12 +618,14 @@ function App() {
         {matchPopup}
         <UserProfilePage
           initialSection={profileStartSection}
+          initialPaymentTarget={profileStartPaymentTarget}
           userName={userName}
           userEmail={userEmail}
           userLocation={userLocation}
           chatsCount={chats.length}
           activeTradesCount={postsPaused ? 0 : userPosts.length}
           userPosts={userPosts}
+          onEditPost={editUserPost}
           onDeletePost={deleteUserPost}
           onBackToMarketplace={backToMarketplace}
           onSaveProfile={saveUserProfile}
@@ -663,6 +705,7 @@ function App() {
         sendChatMessage={sendChatMessage}
         onOpenProfile={openUserProfile}
         onOpenMembershipPlans={openMembershipPlans}
+        onOpenBoostPaymentDetails={openBoostPaymentDetails}
         onOpenSwipe={openSwipePage}
         onOpenCreatePost={openCreatePostPage}
         userPlan={userPlan}

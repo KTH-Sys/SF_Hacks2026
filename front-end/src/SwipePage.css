@@ -2,8 +2,8 @@
   min-height: 100vh;
   padding: 1.2rem;
   color: var(--ink);
-  background: radial-gradient(circle at 20% 16%, #4f9f4d 0, transparent 42%),
-    radial-gradient(circle at 80% 80%, #2f7f3f 0, transparent 38%), #3f8f43;
+  background: radial-gradient(circle at 20% 16%, #16a34a 0, transparent 42%),
+    radial-gradient(circle at 80% 80%, #0d9488 0, transparent 38%), #15803d;
 }
 
 .swipe-header {
@@ -15,13 +15,20 @@
 }
 
 .swipe-header button {
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
   color: #fff;
   padding: 0.5rem 0.8rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.swipe-header button:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .swipe-header h1,
@@ -30,9 +37,14 @@
   color: #fff;
 }
 
+.swipe-header h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 .swipe-header p {
   font-size: 0.9rem;
-  opacity: 0.95;
+  opacity: 0.9;
 }
 
 .swipe-main {
@@ -54,9 +66,9 @@
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 20px);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .layer-back {
@@ -73,11 +85,12 @@
 .swipe-card {
   position: relative;
   z-index: 3;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
   overflow: hidden;
-  background: rgba(17, 28, 19, 0.92);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+  background: rgba(10, 26, 15, 0.88);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
   transition: transform 140ms ease;
   cursor: grab;
   touch-action: pan-y;
@@ -98,7 +111,7 @@
 .choice-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(40, 160, 68, 0.82);
+  background: rgba(22, 163, 74, 0.85);
   color: #fff;
   font-size: 2rem;
   font-weight: 700;
@@ -123,30 +136,49 @@
 .swipe-info h2 {
   margin: 0 0 0.4rem;
   color: #fff;
+  font-weight: 700;
 }
 
 .swipe-info p {
   margin: 0.25rem 0;
-  color: #ecf5ea;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .swipe-action {
   width: 68px;
   height: 68px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
   color: #fff;
   font-size: 1.9rem;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.swipe-action:hover {
+  transform: scale(1.1);
 }
 
 .swipe-action.no {
-  background: rgba(208, 87, 87, 0.22);
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.swipe-action.no:hover {
+  background: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
 }
 
 .swipe-action.yes {
-  background: rgba(63, 154, 89, 0.26);
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(22, 163, 74, 0.4);
+}
+
+.swipe-action.yes:hover {
+  background: rgba(22, 163, 74, 0.25);
+  box-shadow: 0 4px 20px rgba(22, 163, 74, 0.3);
 }
 
 .swipe-action:disabled {
@@ -158,11 +190,11 @@
   margin: 1rem auto 0;
   max-width: 620px;
   text-align: center;
-  color: #f0f6ee;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .swipe-status.limit {
-  color: #ffe0d9;
+  color: #fca5a5;
 }
 
 @media (max-width: 860px) {
@@ -173,7 +205,7 @@
   .swipe-action {
     width: 100%;
     height: auto;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 0.35rem;
   }
 

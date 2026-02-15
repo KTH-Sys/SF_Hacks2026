@@ -18,6 +18,7 @@ function MarketplacePage({
   sendChatMessage,
   onOpenProfile,
   onOpenMembershipPlans,
+  onOpenBoostPaymentDetails,
   onOpenSwipe,
   onOpenCreatePost,
   userPlan,
@@ -154,10 +155,14 @@ function MarketplacePage({
             <div className="profile-row">
               <div className="profile-links">
                 <button className="upgrade-link-button" type="button" onClick={onOpenMembershipPlans}>
-                  {userPlan === 'pro' ? 'View Plan' : 'Upgrade to Pro'}
+                  {userPlan === 'pro' ? '💎 View Plan' : '💎 Upgrade to Pro'}
                 </button>
-                <button className="upgrade-link-button boost-post-link" type="button" onClick={onOpenCreatePost}>
-                  Boost Post
+                <button
+                  className="upgrade-link-button boost-post-link"
+                  type="button"
+                  onClick={onOpenBoostPaymentDetails || onOpenMembershipPlans}
+                >
+                  ✨ Boost Post
                 </button>
               </div>
               <button className="profile-button" type="button" onClick={onOpenProfile}>
@@ -184,9 +189,6 @@ function MarketplacePage({
             <div className="market-top-actions">
               <button className="swap-mode-button" type="button" onClick={onOpenSwipe}>
                 Swap Mode
-              </button>
-              <button className="boost-post-header-btn" type="button" onClick={onOpenCreatePost}>
-                Boost Post
               </button>
               {userPlan === 'free' ? (
                 <p className="swipe-counter">

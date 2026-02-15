@@ -8,10 +8,12 @@
 .create-post-card {
   width: min(860px, 100%);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--surface);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 1.2rem;
 }
 
 .create-post-header {
@@ -23,16 +25,24 @@
 
 .create-post-header h1 {
   margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .create-post-header button {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   color: var(--ink);
   padding: 0.5rem 0.85rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.create-post-header button:hover {
+  border-color: var(--accent);
 }
 
 .create-post-form {
@@ -46,17 +56,27 @@
   gap: 0.3rem;
   color: var(--ink);
   font-size: 0.92rem;
+  font-weight: 500;
 }
 
 .create-post-form input,
 .create-post-form textarea,
 .create-post-form select {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-2);
   color: var(--ink);
   padding: 0.55rem 0.65rem;
   font: inherit;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.create-post-form input:focus,
+.create-post-form textarea:focus,
+.create-post-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .create-post-form textarea {
@@ -68,7 +88,7 @@
   width: 100%;
   max-height: 260px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--line);
 }
 
@@ -80,24 +100,39 @@
 
 .publish-btn {
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
-  padding: 0.65rem 0.9rem;
+  padding: 0.7rem 0.9rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 150ms ease, box-shadow 200ms ease;
+}
+
+.publish-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
+}
+
+.publish-btn:active {
+  transform: translateY(0);
 }
 
 .ai-btn {
   border: 1px solid var(--accent);
-  border-radius: 10px;
+  border-radius: 12px;
   background: transparent;
   color: var(--accent);
   padding: 0.45rem 0.75rem;
   font: inherit;
   font-size: 0.88rem;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.ai-btn:hover {
+  background: var(--soft-fill);
 }
 
 .ai-btn:disabled {
@@ -108,7 +143,7 @@
 .ai-estimate-result {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.8rem;
   font-size: 0.9rem;
   margin: 0;
@@ -119,7 +154,7 @@
 }
 
 .ai-error {
-  color: #c66f6f;
+  color: #ef4444;
   font-size: 0.88rem;
   margin: 0;
 }

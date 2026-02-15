@@ -198,6 +198,17 @@ export async function deleteListing(listingId) {
   return request(`/listings/${listingId}`, { method: 'DELETE' })
 }
 
+export async function updateListing(listingId, updates) {
+  const body = {}
+  if (updates.title !== undefined) body.title = updates.title
+  if (updates.description !== undefined) body.description = updates.description
+  if (updates.category !== undefined) body.category = categoryToBackend(updates.category)
+  if (updates.condition !== undefined) body.condition = conditionToBackend(updates.condition)
+  if (updates.estimatedValue !== undefined) body.estimated_value = updates.estimatedValue
+  if (updates.images !== undefined) body.images = updates.images
+  return request(`/listings/${listingId}`, { method: 'PATCH', body })
+}
+
 // ── Swipes ───────────────────────────────────────────────────────────────────
 export async function swipe(swiperListingId, targetListingId, direction) {
   return request('/swipes/', {

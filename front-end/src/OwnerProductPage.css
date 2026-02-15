@@ -7,10 +7,12 @@
   width: min(1080px, 100%);
   margin: 0 auto;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--surface);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 1.2rem;
 }
 
 .owner-actions {
@@ -20,12 +22,18 @@
 
 .owner-actions button {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   color: var(--ink);
   padding: 0.5rem 0.8rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.owner-actions button:hover {
+  border-color: var(--accent);
 }
 
 .owner-layout {
@@ -37,7 +45,7 @@
 
 .owner-image {
   min-height: 420px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid var(--line);
   background-size: cover;
   background-position: center;
@@ -45,8 +53,9 @@
 
 .owner-details {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   padding: 0.9rem;
 }
 
@@ -56,10 +65,13 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .owner-details h1 {
   margin: 0.25rem 0 0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .owner-details p {
@@ -79,12 +91,19 @@
 .owner-details button {
   margin-top: 0.95rem;
   border: none;
-  border-radius: 10px;
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
   padding: 0.56rem 0.85rem;
   font: inherit;
+  font-weight: 500;
   cursor: pointer;
+  transition: transform 150ms ease, box-shadow 200ms ease;
+}
+
+.owner-details button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
 }
 
 @media (max-width: 860px) {

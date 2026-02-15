@@ -7,6 +7,8 @@
   width: 100%;
   min-height: 100vh;
   background: var(--surface);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
   padding: 1.2rem 1.4rem;
 }
 
@@ -23,11 +25,14 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .profile-header h1 {
   margin: 0.35rem 0 0;
   color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .profile-subtitle {
@@ -42,17 +47,28 @@
 
 .profile-header button {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   color: var(--ink);
   padding: 0.5rem 0.8rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.profile-header button:hover {
+  border-color: var(--accent);
 }
 
 .sign-out-btn {
-  border-color: #d17676 !important;
-  color: #b94f4f !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+}
+
+.sign-out-btn:hover {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.06) !important;
 }
 
 .profile-layout {
@@ -65,8 +81,9 @@
 
 .profile-menu {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   padding: 0.7rem;
   display: grid;
   gap: 0.35rem;
@@ -74,32 +91,40 @@
 }
 
 .profile-menu button {
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: var(--surface-2);
+  background: transparent;
   color: var(--ink);
   text-align: left;
   padding: 0.55rem 0.65rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.profile-menu button:hover {
+  background: var(--soft-fill);
 }
 
 .profile-menu button.active {
   border-color: var(--accent);
   background: var(--soft-active);
-  color: var(--ink);
+  color: var(--accent);
+  font-weight: 500;
 }
 
 .profile-content-card {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   padding: 1.1rem;
 }
 
 .profile-content-card h2 {
   margin: 0;
   color: var(--ink);
+  font-weight: 700;
 }
 
 .profile-content-card ul {
@@ -123,13 +148,22 @@
   gap: 0.35rem;
   color: var(--ink);
   font-size: 0.92rem;
+  font-weight: 500;
 }
 
 .about-editor input {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.55rem 0.65rem;
   font: inherit;
+  background: var(--surface);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.about-editor input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .about-editor input:disabled {
@@ -145,7 +179,7 @@
 
 .about-map {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   background: var(--surface-2);
 }
@@ -164,18 +198,24 @@
 
 .about-actions button {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-2);
   color: var(--ink);
   padding: 0.5rem 0.8rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .about-actions button:last-child {
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
-  border-color: var(--accent);
+  border-color: transparent;
+}
+
+.about-actions button:last-child:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
 }
 
 .about-actions .secondary {
@@ -190,12 +230,18 @@
 
 .settings-row {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.8rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.8rem;
+  background: var(--surface);
+  transition: border-color 200ms ease;
+}
+
+.settings-row:hover {
+  border-color: rgba(22, 163, 74, 0.2);
 }
 
 .settings-row h3 {
@@ -221,6 +267,12 @@
   padding: 0.5rem 0.85rem;
   font: inherit;
   cursor: pointer;
+  transition: border-color 200ms ease;
+}
+
+.settings-row button:hover,
+.settings-row select:hover {
+  border-color: var(--accent);
 }
 
 .radius-input-wrap {
@@ -261,9 +313,14 @@
 }
 
 .settings-actions button:last-child {
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
-  border-color: var(--accent);
+  border-color: transparent;
+}
+
+.settings-actions button:last-child:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
 }
 
 .settings-notice {
@@ -286,13 +343,18 @@
 
 .manage-post-item {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.75rem 0.8rem;
   background: var(--surface);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.8rem;
+  transition: border-color 200ms ease;
+}
+
+.manage-post-item:hover {
+  border-color: rgba(22, 163, 74, 0.2);
 }
 
 .manage-post-copy h3 {
@@ -307,18 +369,41 @@
   font-size: 0.86rem;
 }
 
-.delete-post-button {
-  border: 1px solid #cc4b4b;
-  background: #cc4b4b;
-  color: #fff;
-  border-radius: 9px;
+.manage-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.edit-post-button {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  border-radius: 10px;
   padding: 0.46rem 0.7rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.edit-post-button:hover {
+  border-color: var(--accent);
+}
+
+.delete-post-button {
+  border: 1px solid #ef4444;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.46rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .delete-post-button:hover {
-  filter: brightness(1.05);
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 .plans-grid {
@@ -330,26 +415,28 @@
 
 .plan-card {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--surface-2);
+  backdrop-filter: var(--glass);
   padding: 0.9rem;
   text-align: left;
+  transition: border-color 200ms ease;
 }
 
 .plan-card.current {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.2);
 }
 
 .plan-card-pro {
-  background: #2f8f2f;
-  border-color: #2f8f2f;
+  background: linear-gradient(135deg, #16a34a, #0d9488);
+  border-color: transparent;
   color: #fff;
   font: inherit;
 }
 
 .plan-card-pro:hover {
-  filter: brightness(1.05);
+  box-shadow: 0 8px 24px rgba(22, 163, 74, 0.35);
 }
 
 .plan-card-pro .plan-head h3,
@@ -364,13 +451,13 @@
 }
 
 .plan-card-pro .plan-head > span {
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.3);
   color: #fff;
   background: rgba(255, 255, 255, 0.14);
 }
 
 .plan-crown {
-  color: #ffd54a;
+  color: #fbbf24;
   display: inline-flex;
   vertical-align: middle;
   border: none;
@@ -422,20 +509,26 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
   padding: 0.5rem 0.75rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.plan-buy-now:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .boost-plan-card {
   margin-top: 0.85rem;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface);
   padding: 0.9rem;
 }
@@ -448,14 +541,20 @@
 
 .boost-buy-button {
   margin-top: 0.75rem;
-  border: 1px solid var(--accent);
-  border-radius: 10px;
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
   padding: 0.55rem 0.8rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 150ms ease, box-shadow 200ms ease;
+}
+
+.boost-buy-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
 }
 
 @media (max-width: 820px) {

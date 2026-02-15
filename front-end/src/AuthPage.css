@@ -11,15 +11,17 @@
   grid-template-columns: 1.1fr 1fr;
   overflow: hidden;
   background: var(--surface);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 24px;
   box-shadow: var(--shadow);
 }
 
 .auth-hero {
-  padding: 2rem;
-  background: radial-gradient(circle at 12% 15%, #ffe4c8 0, transparent 44%),
-    radial-gradient(circle at 88% 78%, #d0f0e5 0, transparent 42%), var(--surface);
+  padding: 2.5rem;
+  background: radial-gradient(circle at 12% 15%, rgba(22, 163, 74, 0.15) 0, transparent 44%),
+    radial-gradient(circle at 88% 78%, rgba(13, 148, 136, 0.12) 0, transparent 42%), var(--surface);
   border-right: 1px solid var(--line);
 }
 
@@ -27,6 +29,7 @@
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.78rem;
+  font-weight: 600;
   color: var(--accent);
   margin: 0;
 }
@@ -34,15 +37,18 @@
 .auth-hero h1 {
   margin: 0.25rem 0 0.5rem;
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .auth-hero p {
   margin: 0;
   color: var(--muted);
+  line-height: 1.6;
 }
 
 .auth-form-wrap {
-  padding: 2rem;
+  padding: 2.5rem;
   display: grid;
   align-content: center;
   gap: 1rem;
@@ -52,7 +58,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
@@ -60,14 +66,15 @@
   border: 0;
   background: var(--soft-fill);
   color: var(--ink);
-  padding: 0.65rem 0.7rem;
+  padding: 0.7rem 0.7rem;
   font-weight: 600;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .auth-tabs button.active {
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
 }
 
@@ -80,14 +87,24 @@
   display: grid;
   gap: 0.4rem;
   font-size: 0.92rem;
+  font-weight: 500;
   color: var(--ink);
 }
 
 .auth-form input {
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0.65rem 0.7rem;
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
   font: inherit;
+  background: var(--surface-2);
+  backdrop-filter: var(--glass);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .auth-message {
@@ -104,12 +121,23 @@
 
 .auth-form button {
   border: none;
-  border-radius: 11px;
-  padding: 0.7rem 0.75rem;
+  border-radius: 12px;
+  padding: 0.75rem 0.75rem;
   color: var(--on-accent);
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 150ms ease, box-shadow 200ms ease;
+}
+
+.auth-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
+}
+
+.auth-form button:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 1080px) {
@@ -123,13 +151,13 @@
   }
 
   .auth-form-wrap {
-    padding: 1.2rem;
+    padding: 1.5rem;
   }
 }
 
 @media (max-width: 700px) {
   .auth-hero,
   .auth-form-wrap {
-    padding: 1rem;
+    padding: 1.2rem;
   }
 }

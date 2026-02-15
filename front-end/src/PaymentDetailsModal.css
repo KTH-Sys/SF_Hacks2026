@@ -2,7 +2,8 @@
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: rgba(8, 10, 8, 0.56);
+  background: rgba(10, 26, 15, 0.5);
+  backdrop-filter: blur(6px);
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -11,10 +12,12 @@
 .payment-modal {
   width: min(520px, 100%);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 20px;
   background: var(--surface);
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 1.2rem;
 }
 
 .payment-modal-header {
@@ -27,6 +30,7 @@
 .payment-modal-header h3 {
   margin: 0;
   color: var(--ink);
+  font-weight: 700;
 }
 
 .payment-close {
@@ -37,6 +41,11 @@
   padding: 0.45rem 0.7rem;
   font: inherit;
   cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.payment-close:hover {
+  border-color: var(--accent);
 }
 
 .payment-price {
@@ -56,17 +65,25 @@
   gap: 0.32rem;
   color: var(--ink);
   font-size: 0.9rem;
+  font-weight: 500;
   align-content: start;
 }
 
 .payment-form input {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-2);
   color: var(--ink);
   padding: 0.55rem 0.65rem;
   font: inherit;
   width: 100%;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.payment-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .payment-grid {
@@ -78,13 +95,23 @@
 
 .payment-submit {
   border: none;
-  border-radius: 10px;
-  background: linear-gradient(90deg, var(--accent), #6ca36b);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
-  padding: 0.6rem 0.8rem;
+  padding: 0.65rem 0.8rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 150ms ease, box-shadow 200ms ease;
+}
+
+.payment-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
+}
+
+.payment-submit:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 720px) {
