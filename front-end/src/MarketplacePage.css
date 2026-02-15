@@ -59,6 +59,17 @@
   cursor: pointer;
 }
 
+.boost-post-header-btn {
+  border: 1px solid #dbcfc2;
+  background: #fffdfb;
+  color: #5e5851;
+  border-radius: 999px;
+  padding: 0.42rem 0.9rem;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
 .profile-button {
   border: 1px solid rgba(255, 255, 255, 0.72);
   background: rgba(255, 255, 255, 0.24);

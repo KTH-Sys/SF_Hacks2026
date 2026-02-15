@@ -185,6 +185,9 @@ function MarketplacePage({
               <button className="swap-mode-button" type="button" onClick={onOpenSwipe}>
                 Swap Mode
               </button>
+              <button className="boost-post-header-btn" type="button" onClick={onOpenCreatePost}>
+                Boost Post
+              </button>
               {userPlan === 'free' ? (
                 <p className="swipe-counter">
                   {swipesUsed}/{freeSwipeLimit} swaps used
