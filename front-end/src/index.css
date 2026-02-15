@@ -62,7 +62,7 @@ body,
 
 body {
   font-family: 'Space Grotesk', sans-serif;
-  background: linear-gradient(140deg, #f1ebe1, #f4efe7 36%, #f1f6f2);
+  background: linear-gradient(140deg, #e8e4dd, #efebe5 36%, #eef2ef);
 }
 
 :root.theme-dark body {

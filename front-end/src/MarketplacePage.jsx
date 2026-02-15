@@ -156,6 +156,9 @@ function MarketplacePage({
                 <button className="upgrade-link-button" type="button" onClick={onOpenMembershipPlans}>
                   {userPlan === 'pro' ? 'View Plan' : 'Upgrade to Pro'}
                 </button>
+                <button className="upgrade-link-button boost-post-link" type="button" onClick={onOpenCreatePost}>
+                  Boost Post
+                </button>
               </div>
               <button className="profile-button" type="button" onClick={onOpenProfile}>
                 <span className="profile-avatar" aria-hidden="true">
