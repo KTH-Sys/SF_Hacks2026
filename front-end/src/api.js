@@ -1,4 +1,4 @@
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 // ── Token helpers ────────────────────────────────────────────────────────────
 export function getToken() {
@@ -252,6 +252,11 @@ export async function sendMessage(matchId, content, type = 'text') {
 
 export function createChatWebSocket(matchId) {
   const token = getToken()
+  const apiUrl = import.meta.env.VITE_API_URL
+  if (apiUrl) {
+    const wsUrl = apiUrl.replace(/^http/, 'ws')
+    return new WebSocket(`${wsUrl}/chat/ws/${matchId}?token=${token}`)
+  }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
   return new WebSocket(`${protocol}//${host}/api/chat/ws/${matchId}?token=${token}`)
